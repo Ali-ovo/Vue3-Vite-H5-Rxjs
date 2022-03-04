@@ -1,0 +1,6 @@
+public
+dist
+*.d.ts
+.eslintrc.js
+vite.config.ts
+.prettierrc.js
