@@ -14,6 +14,9 @@ module.exports = {
     ecmaVersion: 2020
   },
   rules: {
+    // "vue/multi-word-component-names": [1, {
+    // 	"ignores": []
+    // }],
     '@typescript-eslint/no-explicit-any': ['off'],
     // 可能的错误  //
 
@@ -98,7 +101,7 @@ module.exports = {
     // 强制把变量的使用限制在其定义的作用域范围内
     'block-scoped-var': 0,
     // 限制圈复杂度，也就是类似if else能连续接多少个
-    complexity: [2, 9],
+    complexity: [2, 19],
     //  要求 return 语句要么总是指定返回的值，要么不指定
     'consistent-return': 0,
     // 强制所有控制语句使用一致的括号风格
@@ -163,7 +166,7 @@ module.exports = {
     // 禁止在循环中出现 function 声明和表达式
     'no-loop-func': 1,
     // 禁用魔术数字(3.14什么的用常量代替)
-    'no-magic-numbers': [1, { ignore: [0, -1, 1] }],
+    'no-magic-numbers': [0, { ignore: [0, -1, 1] }],
     // 禁止使用多个空格
     'no-multi-spaces': 2,
     // 禁止使用多行字符串，在 JavaScript 中，可以在新行之前使用斜线创建多行字符串
@@ -246,7 +249,7 @@ module.exports = {
     // 禁止覆盖受限制的标识符
     'no-shadow-restricted-names': 2,
     // 禁用未声明的变量，除非它们在 /*global */ 注释中被提到
-    'no-undef': 2,
+    'no-undef': 0,
     // 禁止将变量初始化为 undefined
     'no-undef-init': 2,
     // 禁止将 undefined 作为标识符
@@ -307,7 +310,11 @@ module.exports = {
     'func-names': 0,
     // 文件末尾强制换行
     'eol-last': 2,
-    indent: [0, 2, { SwitchCase: 1 }],
+    // indent: [0, 2, { SwitchCase: 1 }],
+    // "vue/script-indent": [1, 2, {  // script标签缩进设置
+    //   "baseIndent": 1
+    // }],
+
     // 强制在对象字面量的属性中键和值之间使用一致的间距
     'key-spacing': [2, { beforeColon: false, afterColon: true }],
     // 强制使用一致的换行风格
@@ -332,7 +339,7 @@ module.exports = {
     // 强制在关键字前后使用一致的空格 (前后腰需要)
     'keyword-spacing': 2,
     // 强制一行的最大长度
-    'max-len': [1, 500],
+    // 'max-len': [1, 500],
     // 强制最大行数
     'max-lines': 0,
     // 强制 function 定义中最多允许的参数数量
@@ -354,7 +361,7 @@ module.exports = {
     // 要求 return 语句之前有一空行
     'newline-before-return': 0,
     // 要求方法链中每个调用都有一个换行符
-    'newline-per-chained-call': 1,
+    'newline-per-chained-call': 0,
     // 禁用 continue 语句
     'no-continue': 0,
     // 禁止在代码行后使用内联注释
@@ -402,11 +409,7 @@ module.exports = {
     // 要求或禁止在可能的情况下要求使用简化的赋值操作符
     'operator-assignment': 0,
     // 强制操作符使用一致的换行符
-    'operator-linebreak': [
-      2,
-      'after',
-      { overrides: { '?': 'before', ':': 'before' } }
-    ],
+    'operator-linebreak': [2, 'after', { overrides: { '?': 'before', ':': 'before' } }],
     // 要求或禁止块内填充
     'padded-blocks': 0,
     // 要求对象字面量属性名称用引号括起来
@@ -436,14 +439,7 @@ module.exports = {
       2,
       'always',
       {
-        markers: [
-          'global',
-          'globals',
-          'eslint',
-          'eslint-disable',
-          '*package',
-          '!'
-        ]
+        markers: ['global', 'globals', 'eslint', 'eslint-disable', '*package', '!']
       }
     ],
     // 要求或禁止 Unicode BOM
@@ -456,9 +452,9 @@ module.exports = {
     //
 
     // 要求箭头函数体使用大括号
-    'arrow-body-style': 2,
+    'arrow-body-style': 0,
     // 要求箭头函数的参数使用圆括号
-    'arrow-parens': 2,
+    'arrow-parens': 0,
     'arrow-spacing': [2, { before: true, after: true }],
     // 强制在子类构造函数中用super()调用父类构造函数，TypeScrip的编译器也会提示
     'constructor-super': 0,
@@ -507,6 +503,8 @@ module.exports = {
     // 要求或禁止模板字符串中的嵌入表达式周围空格的使用
     'template-curly-spacing': 1,
     // 强制在 yield* 表达式中 * 周围使用空格
-    'yield-star-spacing': 2
+    'yield-star-spacing': 2,
+
+    '@typescript-eslint/no-non-null-assertion': 'off'
   }
-};
+}

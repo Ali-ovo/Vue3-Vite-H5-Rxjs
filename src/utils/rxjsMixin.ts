@@ -1,121 +1,107 @@
-import { ref, watchPostEffect } from 'vue';
-import {
-  concat,
-  from,
-  map,
-  Observable,
-  Subject,
-  Subscription,
-  switchAll
-} from 'rxjs';
-import {
-  absPromise,
-  absTypes,
-  RequestFactoryType,
-  useCommonAsyncType
-} from '@/typings';
+import { Ref, ref, watchPostEffect } from 'vue'
+import { concat, from, map, Observable, Subject, Subscription, switchAll } from 'rxjs'
+import { absTypes, ResponseData } from '@/typings'
 
 // 统一封装的请xjs
-export const useSubscriptions = function (
-  subscriptions: () => { [s: string]: Observable<any> }
-) {
-  watchPostEffect((onInvalidate: (cb: () => void) => void) => {
-    const subscription = new Subscription();
-    if (typeof subscriptions === 'function') {
-      const obj: object = subscriptions();
+export const useSubscriptions = function (subscriptions: () => { [s: string]: Observable<unknown> }) {
+	watchPostEffect((onInvalidate: (cb: () => void) => void) => {
+		const subscription = new Subscription()
+		if (typeof subscriptions === 'function') {
+			const obj = subscriptions()
 
-      if (!obj || !(obj instanceof Object)) {
-        return;
-      }
-      for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
-          subscription.add(obj[key].subscribe({}));
-        }
-      }
-    }
+			if (!obj || !(obj instanceof Object)) {
+				return
+			}
+			for (let key in obj) {
+				if (obj.hasOwnProperty(key)) {
+					subscription.add(obj[key].subscribe({}))
+				}
+			}
+		}
 
-    onInvalidate(() => {
-      subscription && subscription.unsubscribe();
-    });
-  });
-};
+		onInvalidate(() => {
+			subscription && subscription.unsubscribe()
+		})
+	})
+}
 
 // 请求封装
-export const abstractPromise: absPromise = ({
-  payload = {},
-  type = '',
-  defaultState = {},
-  dispatch
-}: absTypes) =>
-  new Promise((resolve: (value: any) => void) => {
-    dispatch({
-      type: type,
-      payload: { ...payload },
-      callback: (res: any = {}) => {
-        if (res.code === 0 || res.success) {
-          defaultState = res.data;
-        }
-        return resolve(defaultState);
-      }
-    });
-  });
+export const abstractPromise = <T extends ResponseData>({
+	payload = {},
+	type = '',
+	defaultState,
+	dispatch,
+	callbackFn
+}: absTypes<T>): Promise<T['data']> =>
+	new Promise((resolve: (value: T['data']) => void) => {
+		dispatch({
+			type: type,
+			payload: payload instanceof FormData ? payload : { ...payload },
+			callback: (res: T) => {
+				if (res.code === 0 || res.message === 'ok' || res.success) {
+					defaultState = callbackFn ? callbackFn(res) : res.data
+				}
+				return resolve(defaultState)
+			}
+		})
+	})
 
 // 返回 subject 和 一个流
-export const commonRequestFactory: RequestFactoryType = () => {
-  const absSubject = new Subject();
-  const abs$ = absSubject.pipe(
-    map((args: absTypes) => from(abstractPromise(args))),
-    switchAll(),
-    map((data: any) => data)
-  );
-  return [absSubject, abs$];
-};
+export const commonRequestFactory = <T extends ResponseData>(): [Subject<unknown>, Observable<T['data']>] => {
+	const absSubject = new Subject()
+	const abs$ = absSubject.pipe(
+		map(args => from(abstractPromise<T>(args as absTypes<T>))),
+		switchAll(),
+		map(data => data)
+	)
+	return [absSubject, abs$]
+}
 
 // 封装的统一请求hooks
-export const useCommonAsync: useCommonAsyncType = (
-  subjectId,
-  _this,
-  { defaultState = {}, callbackFn }
-) => {
-  _this[subjectId] = new Subject();
+export const useCommonAsync = <T extends ResponseData>(
+	subjectId: string,
+	_this?: {
+		[subjectId: string]: Subject<unknown> | Observable<T>
+	}
+): {
+	result: Ref<T | undefined>
+	loading: Ref<boolean>
+} => {
+	// 数据和loading
+	const result = ref<T>()
+	const loading = ref(false)
 
-  // 数据和loading
-  const data = ref(defaultState);
-  const loading = ref(false);
+	useSubscriptions(() => {
+		const [requestSubject, request$]: [Subject<unknown>, Observable<T['data']>] = commonRequestFactory<T>()
+		_this![subjectId] = requestSubject as Subject<unknown>
 
-  useSubscriptions(() => {
-    const [requestSubject, request$]: Observable<any>[] =
-      commonRequestFactory();
+		const requestSubject$ = concat(requestSubject as Observable<T>).pipe(
+			map(() => {
+				loading.value = true
+			})
+		)
 
-    _this[subjectId] = requestSubject;
+		const requestData$ = concat(request$ as Observable<T>).pipe(
+			map(res => {
+				result.value = res
+				loading.value = false
+				return res
+			})
+		)
 
-    const requestSubject$ = concat(requestSubject).pipe(
-      map(() => {
-        loading.value = true;
-      })
-    );
+		_this![subjectId + '$'] = requestData$
 
-    const requestData$ = concat(request$).pipe(
-      map((res: any) => {
-        data.value = callbackFn ? callbackFn(res) : res;
-        loading.value = false;
-        return res;
-      })
-    );
+		return {
+			requestSubject$,
+			requestData$
+		}
+	})
 
-    _this[subjectId + '$'] = requestData$;
-
-    return {
-      requestSubject$,
-      requestData$
-    };
-  });
-
-  return {
-    data,
-    loading
-  };
-};
+	return {
+		result,
+		loading
+	}
+}
 
 /* 处理请求流和
 封装的统一请求hooks
